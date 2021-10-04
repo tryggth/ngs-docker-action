@@ -1,0 +1,29 @@
+# action.yml
+name: 'NGS Action'
+description: 'Publish event information to an NGS subject'
+branding:
+  icon: 'command'
+  color: 'red'
+nputs:
+  nats:
+    description: 'NATs server'
+    required: false
+    default: 'connect.ngs.global'
+  subject:
+    description: 'NATs subject to publish on'
+    required: false
+    default: 'GA'
+  user:
+    description: 'User JWT'
+    required: true
+    default: ''
+  seed:
+    description: 'User NKEY Seed'
+    required: true
+    default: ''
+outputs:
+  time: # id of output
+    description: 'The time we greeted you'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
