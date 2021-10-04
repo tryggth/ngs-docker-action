@@ -4,7 +4,7 @@ description: 'Publish event information to an NGS subject'
 branding:
   icon: 'command'
   color: 'red'
-nputs:
+inputs:
   nats:
     description: 'NATs server'
     required: false
@@ -21,9 +21,6 @@ nputs:
     description: 'User NKEY Seed'
     required: true
     default: ''
-outputs:
-  time: # id of output
-    description: 'The time we greeted you'
 runs:
   using: 'docker'
   image: 'Dockerfile'
