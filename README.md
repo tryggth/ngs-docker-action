@@ -48,7 +48,8 @@ steps:
     with:
       subject: GA
       user: ${{ secrets.NGS_USER }}
-      seed: ${{ secrets.NGS_USER_SEED }}```
+      seed: ${{ secrets.NGS_USER_SEED }}
+```
 
 ## Inputs
 
