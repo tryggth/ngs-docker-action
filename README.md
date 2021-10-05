@@ -20,9 +20,6 @@ the data for CI systems or general event processing.
 * [Outputs](#outputs)
 * [Setup](#setup)
 * [Credentials](#credentials)
-  * [Used with `setup-gcloud`](#Used-with-setup-gcloud)
-  * [Via Credentials](#Via-Credentials)
-  * [Via Application Default Credentials](#Via-Application-Default-Credentials)
 * [Example Workflows](#example-workflows)
 * [Contributing](#contributing)
 * [License](#License)
@@ -42,7 +39,7 @@ creating a user and getting the credentials.
 ```yaml
 steps:
   - name: Send event
-    uses: tryggth/ngs-docker-action@v0.2
+    uses: tryggth/ngs-docker-action@v0.3
     with:
       subject: GA
       user: ${{ secrets.NGS_USER }}
