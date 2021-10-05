@@ -30,7 +30,8 @@ on:
   registry_package:
   status:
   watch:
-  # workflow_run: - Normally this would specify a trigger workflow. Without that it would infinitiely loop
+  # workflow_run: - Normally this would specify a trigger workflow.
+  # Without a workflow name scoping the run it would infinitiely loop
 
 jobs:
   send_actions_event:

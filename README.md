@@ -1,11 +1,5 @@
 <!--
-Copyright 2020 Google LLC
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
+Copyright 2021 Bugopolis LLC
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,10 +7,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-# `deploy-cloudrun` GitHub Action
+# `ngs-docker-action` GitHub Action
 
-Deploys your container image to [Cloud Run][cloud-run] and makes the URL
-available to later build steps via outputs.
+Publishes Github Action event data to [Synadia][NGS]. Subscribers can use
+the data for CI systems or general event processing.
 
 ## Table of Contents
 
@@ -39,46 +33,29 @@ available to later build steps via outputs.
 
 This action requires:
 
-* Google Cloud credentials that are authorized to deploy a
-Cloud Run service. See the [Credentials](#credentials) below for more information.
+* Synadia NGS account. A [Developer account](https://synadia.com/ngs/pricing) will suffice to use the action.
 
-* [Enable the Cloud Run API](http://console.cloud.google.com/apis/library/run.googleapis.com?_ga=2.267842766.1374248275.1591025444-475066991.1589991158)
+* The credentials for a NGS account user. They are the inputs to the action. See [Credentials](#credentials) below for more information about
+creating a user and getting the credentials.
+
 
 ## Usage
 
 ```yaml
-- name: Deploy to Cloud Run
-  id: deploy
-  uses: google-github-actions/deploy-cloudrun@main
-  with:
-    service: hello-cloud-run
-    image: gcr.io/cloudrun/hello
-    credentials: ${{ secrets.GCP_SA_KEY }}
-
-- name: Use Output
-  run: curl "${{ steps.deploy.outputs.url }}"
-```
+steps:
+  - name: Send event
+    uses: tryggth/ngs-docker-action@v0.2
+    with:
+      subject: GA
+      user: ${{ secrets.NGS_USER }}
+      seed: ${{ secrets.NGS_USER_SEED }}```
 
 ## Inputs
 
 | Name          | Requirement | Default | Description |
 | ------------- | ----------- | ------- | ----------- |
-| `service`| Required if not using a service YAML via `metadata` input. | | ID of the service or fully qualified identifier for the service. |
-| `image`| Required if not using a service YAML via `metadata` input. | | Name of the container image to deploy (Example: `gcr.io/cloudrun/hello:latest`). |
-| `region`| _optional_ | `us-central1` | Region in which the resource can be found. |
-| `credentials`| Required if not using a the `setup-gcloud` action with exported credentials. | | Service account key to use for authentication. This should be the JSON formatted private key which can be exported from the Cloud Console. The value can be raw or base64-encoded.  |
-| `env_vars`| _optional_ | | List of key-value pairs to set as environment variables in the format: `KEY1=VALUE1,KEY2=VALUE2`. **All existing environment variables will be retained**. |
-| `secrets`| _optional_ | | List of key-value pairs to set as either environment variables or mounted volumes in the format: `KEY1=secret-key-1:latest,/secrets/api/key=secret-key-2:latest`. The secrets will be fetched from the Secret Manager. **All existing environment secrets or volumes will be retained**. |
-| `metadata`| _optional_ | | YAML service description for the Cloud Run service (**Other inputs will be overridden**). See [Metadata customizations](#metadata-customizations) for more information. |
-| `project_id`| _optional_ | | ID of the Google Cloud project. If provided, this will override the project configured by `setup-gcloud`. |
-| `source` | _optional_ | | Deploy from source by specifying the source directory. The [Artifact Registry API][artifact-api] needs to be enabled and the service account role `Cloud Build Service Account` is required. The first deployment will create an [Artifact Registry repository][repo] which requires the `Artifact Registry Admin` role. Learn more about [Deploying from source code](https://cloud.google.com/run/docs/deploying-source-code). |
-| `suffix` | _optional_ | | Specify the suffix of the revision name. Revision names always start with named 'helloworld', would lead to a revision named 'helloworld-v1'. |
-| `tag` | _optional_ | | Traffic tag to assign to the newly created revision. |
-| `no_traffic` | _optional_ | `false` | Set to `true` to avoid sending traffic to the revision being deployed.|
-| `revision_traffic` | _optional_ | | Comma separated list of traffic assignments in the form REVISION-NAME=PERCENTAGE. |
-| `tag_traffic` | _optional_ | | Comma separated list of traffic assignments in the form TAG=PERCENTAGE. |
-| `flags` | _optional_ | | Space separated list of other Cloud Run flags, examples can be found: https://cloud.google.com/sdk/gcloud/reference/run/deploy#FLAGS. |
-| `gcloud_version` | _optional_ | `latest` | Pin the version of Cloud SDK `gcloud` CLI. |
+| `subject`| _optional_ | `GA` | NATS subject |
+| `user`| required`|  _none_ |  USER NKEY SEED See [Credentials](#credentials) |
 
 ### Metadata customizations
 
@@ -110,79 +87,18 @@ to generated a YAML service specification from an existing service:
 ```
 gcloud run services describe SERVICE --format yaml > service.yaml
 ```
-### Allow unauthenticated requests
-
-A Cloud Run product recommendation is that CI/CD systems not set or change
-settings for allowing unauthenticated invocations. New deployments are
-automatically private services, while deploying a revision of a public
-(unauthenticated) service will preserve the IAM setting of public
-(unauthenticated). For more information, see [Controlling access on an individual service](https://cloud.google.com/run/docs/securing/managing-access).
 
 ## Outputs
 
-- `url`: The URL of your Cloud Run service.
+- `none`
 
 ## Credentials
 
-There are a few ways to authenticate this action. A service account will be needed
-with the following roles:
+There are a few ways to authenticate this action. A service account will be needed with the following roles:
 
 - Cloud Run Admin (`roles/run.admin`):
   - Can create, update, and delete services.
   - Can get and set IAM policies.
-
-This service account needs to a member of the `Compute Engine default service account`,
-`(PROJECT_NUMBER-compute@developer.gserviceaccount.com)`, with role
-`Service Account User`. To grant a user permissions for a service account, use
-one of the methods found in [Configuring Ownership and access to a service account](https://cloud.google.com/iam/docs/granting-roles-to-service-accounts#granting_access_to_a_user_for_a_service_account).
-
-### Used with `setup-gcloud`
-
-You can provide credentials using the [setup-gcloud][setup-gcloud] action:
-
-```yaml
-- uses: google-github-actions/setup-gcloud@master
-  with:
-    service_account_key: ${{ secrets.GCP_SA_KEY }}
-    export_default_credentials: true
-
-- name: Deploy to Cloud Run
-  uses: google-github-actions/deploy-cloudrun@main
-  with:
-    image: gcr.io/cloudrun/hello
-    service: hello-cloud-run
-```
-
-### Via Credentials
-
-You can provide [Google Cloud Service Account JSON][sa] directly to the action
-by specifying the `credentials` input. First, create a [GitHub
-Secret][gh-secret] that contains the JSON content, then import it into the
-action:
-
-```yaml
-- name: Deploy to Cloud Run
-  uses: google-github-actions/deploy-cloudrun@main
-  with:
-    credentials: ${{ secrets.GCP_SA_KEY }}
-    image: gcr.io/cloudrun/hello
-    service: hello-cloud-run
-```
-
-### Via Application Default Credentials
-
-If you are hosting your own runners, **and** those runners are on Google Cloud,
-you can leverage the Application Default Credentials of the instance. This will
-authenticate requests as the service account attached to the instance. **This
-only works using a custom runner hosted on GCP.**
-
-```yaml
-- name: Deploy to Cloud Run
-  uses: google-github-actions/deploy-cloudrun@main
-  with:
-    image: gcr.io/cloudrun/hello
-    service: hello-cloud-run
-```
 
 ## Example Workflows
 
@@ -232,39 +148,6 @@ git push YOUR-FORK main:example-build-deploy
 
 **Reminder: If this is your first deployment of a service, it will reject all unauthenticated requests. Learn more at [allowing unauthenticated requests](#Allow-unauthenticated-requests)**
 
-## Migrating from `setup-gcloud`
-
-Example using `setup-gcloud`:
-
-```YAML
-- name: Setup Cloud SDK
-  uses: google-github-actions/setup-gcloud@v0.2.0
-  with:
-    project_id: ${{ env.PROJECT_ID }}
-    service_account_key: ${{ secrets.GCP_SA_KEY }}
-
-- name: Deploy to Cloud Run
-  run: |-
-    gcloud run deploy $SERVICE \
-      --region $REGION \
-      --image gcr.io/$PROJECT_ID/$SERVICE \
-      --platform managed \
-      --set-env-vars NAME="Hello World"
-```
-
-Migrated to `deploy-cloudrun`:
-
-```YAML
-- name: Deploy to Cloud Run
-  uses: google-github-actions/deploy-cloudrun@v0.2.0
-  with:
-    service: ${{ env.SERVICE }}
-    image: gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}
-    region: ${{ env.REGION }}
-    credentials: ${{ secrets.GCP_SA_KEY }}
-    env_vars: NAME="Hello World"
-```
-Note: The action is for the "managed" platform and will not set access privileges such as [allowing unauthenticated requests](#Allow-unauthenticated-requests).
 
 ## Contributing
 
@@ -274,98 +157,6 @@ See [CONTRIBUTING](CONTRIBUTING.md).
 
 See [LICENSE](LICENSE).
 
-[cloud-run]: https://cloud.google.com/run
-[sa]: https://cloud.google.com/iam/docs/creating-managing-service-accounts
-[create-key]: https://cloud.google.com/iam/docs/creating-managing-service-account-keys
-[gh-runners]: https://help.github.com/en/actions/hosting-your-own-runners/about-self-hosted-runners
-[gh-secret]: https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
-[setup-gcloud]: ./setup-gcloud
-[artifact-api]: https://console.cloud.google.com/flows/enableapi?apiid=artifactregistry.googleapis.com&redirect=https://cloud.google.com/artifact-registry/docs/docker/quickstart&_ga=2.234012894.1325218733.1623704963-2035038643.1623704963
-[repo]: https://cloud.google.com/artifact-registry/docs/manage-repos
-
-# setup-go
-
-<p align="left">
-  <a href="https://github.com/actions/setup-go/actions"><img alt="GitHub Actions status" src="https://github.com/actions/setup-go/workflows/build-test/badge.svg"></a>
-
-  <a href="https://github.com/actions/setup-go/actions"><img alt="versions status" src="https://github.com/actions/setup-go/workflows/go-versions/badge.svg"></a>  
-</p>
-
-This action sets up a go environment for use in actions by:
-
-- optionally downloading and caching a version of Go by version and adding to PATH
-- registering problem matchers for error output
-
-# V2
-
-The V2 offers:
-- Adds GOBIN to the PATH
-- Proxy Support
-- stable input
-- Bug Fixes (including issues around version matching and semver)
-
-It will first check the local cache for a version match. If version is not found locally, It will pull it from `main` branch of [go-versions](https://github.com/actions/go-versions/blob/main/versions-manifest.json) repository and on miss or failure, it will fall back to the previous behavior of download directly from [go dist](https://storage.googleapis.com/golang).
-
-Matching by semver spec:
-```yaml
-steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-go@v2
-  with:
-    go-version: '^1.13.1' # The Go version to download (if necessary) and use.
-- run: go version
-```
-
-Matching an unstable pre-release:
-```yaml
-steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-go@v2
-  with:
-    stable: 'false'
-    go-version: '1.14.0-rc1' # The Go version to download (if necessary) and use.
-- run: go version
-```
-
-# Usage
-
-See [action.yml](action.yml)
-
-Basic:
-```yaml
-steps:
-- uses: actions/checkout@master
-- uses: actions/setup-go@v2
-  with:
-    go-version: '1.9.3' # The Go version to download (if necessary) and use.
-- run: go run hello.go
-```
-
-Matrix Testing:
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-16.04
-    strategy:
-      matrix:
-        go: [ '1.14', '1.13' ]
-    name: Go ${{ matrix.go }} sample
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup go
-        uses: actions/setup-go@v2
-        with:
-          go-version: ${{ matrix.go }}
-      - run: go run hello.go
-```
-
-# License
-
-The scripts and documentation in this project are released under the [MIT License](LICENSE)
-
-# Contributions
-
-Contributions are welcome!  See [Contributor's Guide](docs/contributors.md)
 
 ## Code of Conduct
 

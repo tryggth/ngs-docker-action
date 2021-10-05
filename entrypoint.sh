@@ -22,8 +22,11 @@ export ACTION_EVENT=$(jq -n --arg value $GITHUB_JOB '. + {GITHUB_JOB: $value}' |
   jq --arg value $GITHUB_ACTION_REPOSITORY '. + {GITHUB_ACTION_REPOSITORY: $value}' | \
   jq --arg value $GITHUB_ACTION_REF '. + {GITHUB_ACTION_REF: $value}')
 
-echo "---------BEGIN EVENT INFO---------"
+# Debugging information - message payload
 echo $ACTION_EVENT
+
+# Add any additional debugging information between the BEGIN and END markers
+echo "---------BEGIN EVENT INFO---------"
 cat $GITHUB_EVENT_PATH
 echo "----------END EVENT INFO----------"
 
