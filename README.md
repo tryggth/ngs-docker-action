@@ -17,15 +17,13 @@ the data for CI systems or general event processing.
 * [Prerequisites](#prerequisites)
 * [Usage](#usage)
 * [Inputs](#inputs)
-  * [Metadata customizations](#metadata-customizations)
-  * [Allow unauthenticated requests](#Allow-unauthenticated-requests)
 * [Outputs](#outputs)
+* [Setup](#setup)
 * [Credentials](#credentials)
   * [Used with `setup-gcloud`](#Used-with-setup-gcloud)
   * [Via Credentials](#Via-Credentials)
   * [Via Application Default Credentials](#Via-Application-Default-Credentials)
 * [Example Workflows](#example-workflows)
-* [Migrating from `setup-gcloud`](#migrating-from-setup-gcloud)
 * [Contributing](#contributing)
 * [License](#License)
 
@@ -56,99 +54,232 @@ steps:
 | Name          | Requirement | Default | Description |
 | ------------- | ----------- | ------- | ----------- |
 | `subject`| _optional_ | `GA` | NATS subject |
-| `user`| required`|  _none_ |  USER NKEY SEED See [Credentials](#credentials) |
-
-### Metadata customizations
-
-You can store your service specification in a YAML file. This will allow for
-further service configuration, such as [memory limits](https://cloud.google.com/run/docs/configuring/memory-limits),
-[CPU allocation](https://cloud.google.com/run/docs/configuring/cpu),
-[max instances](https://cloud.google.com/run/docs/configuring/max-instances),
-and [more](https://cloud.google.com/sdk/gcloud/reference/run/deploy#OPTIONAL-FLAGS).
-**Other inputs will be overridden when using `metadata`**
-
-- See [Deploying a new service](https://cloud.google.com/run/docs/deploying#yaml)
-to create a new YAML service definition, for example:
-
-```YAML
-apiVersion: serving.knative.dev/v1
-kind: Service
-metadata:
-  name: SERVICE
-spec:
-  template:
-    spec:
-      containers:
-      - image: IMAGE
-```
-
-- See [Deploy a new revision of an existing service](https://cloud.google.com/run/docs/deploying#yaml_1)
-to generated a YAML service specification from an existing service:
-
-```
-gcloud run services describe SERVICE --format yaml > service.yaml
-```
+| `user`| _required_ | |  USER JWT. See [Credentials](#credentials) |
+| `seed`| _required_ | |  USER NKEY SEED. See [Credentials](#credentials) |
+| `nats`| _optional_ | `connect.ngs.global` | NATS server URL |
 
 ## Outputs
 
 - `none`
 
+There are no step outputs. The effective output is the payload of the sent NGS
+message.  Here is an example from the action in this action's repository:
+
+```json
+'{
+  "GITHUB_JOB": "send_actions_event",
+  "GITHUB_REF": "refs/heads/main",
+  "GITHUB_SHA": "ac8eb00ed476abebdd46ad7b25f1e7a49ae9bae5",
+  "GITHUB_REPOSITORY": "tryggth/ngs-docker-action",
+  "GITHUB_REPOSITORY_OWNER": "tryggth",
+  "GITHUB_ACTOR": "tryggth",
+  "GITHUB_RUN_ID": "1309190176",
+  "GITHUB_RUN_NUMBER": "16",
+  "GITHUB_RETENTION_DAYS": "90",
+  "GITHUB_RUN_ATTEMPT": "1",
+  "GITHUB_WORKFLOW": ".github/workflows/main.yml",
+  "GITHUB_EVENT_NAME": "push",
+  "GITHUB_ACTION": "__tryggth_ngs-docker-action",
+  "GITHUB_EVENT_PATH": "/github/workflow/event.json",
+  "GITHUB_ACTION_REPOSITORY": "tryggth/ngs-docker-action",
+  "GITHUB_ACTION_REF": "v0.2"
+}'
+```
+The content of the NATS payload tries to strike a balance of providing enough data
+from the action's triggering event to be useful for most (Continuous Integration) use cases while also providing the Github coordinates necessary to retrieve the action run's log.
+
+The action run's log contains additional triggering event - including the entire event's payload between the sentinel `---------BEGIN EVENT INFO---------` and `----------END EVENT INFO----------`. Here is an example of such a payload:
+
+```
+---------BEGIN EVENT INFO---------
+{
+  "after": "ac8eb00ed476abebdd46ad7b25f1e7a49ae9bae5",
+  "base_ref": null,
+  "before": "11b60c517a36dbe70071ec4a028c382a9ad9e9ac",
+  "commits": [
+    {
+      "author": {
+        "email": "tryggth@tryggth.com",
+        "name": "Tryggth",
+        "username": "tryggth"
+      },
+      "committer": {
+        "email": "tryggth@tryggth.com",
+        "name": "Tryggth",
+        "username": "tryggth"
+      },
+      "distinct": true,
+      "id": "ac8eb00ed476abebdd46ad7b25f1e7a49ae9bae5",
+      "message": "Documentation formating experimentation",
+      "timestamp": "2021-10-05T13:11:16-07:00",
+      "tree_id": "79fedf768c29575857c94ee41078c74695768111",
+      "url": "https://github.com/tryggth/ngs-docker-action/commit/ac8eb00ed476abebdd46ad7b25f1e7a49ae9bae5"
+    }
+  ],
+  "compare": "https://github.com/tryggth/ngs-docker-action/compare/11b60c517a36...ac8eb00ed476",
+  "created": false,
+  "deleted": false,
+  "forced": false,
+  "head_commit": {
+    "author": {
+      "email": "tryggth@tryggth.com",
+      "name": "Tryggth",
+      "username": "tryggth"
+    },
+    "committer": {
+      "email": "tryggth@tryggth.com",
+      "name": "Tryggth",
+      "username": "tryggth"
+    },
+    "distinct": true,
+    "id": "ac8eb00ed476abebdd46ad7b25f1e7a49ae9bae5",
+    "message": "Documentation formating experimentation",
+    "timestamp": "2021-10-05T13:11:16-07:00",
+    "tree_id": "79fedf768c29575857c94ee41078c74695768111",
+    "url": "https://github.com/tryggth/ngs-docker-action/commit/ac8eb00ed476abebdd46ad7b25f1e7a49ae9bae5"
+  },
+  "pusher": {
+    "email": "tryggth@tryggth.com",
+    "name": "tryggth"
+  },
+  "ref": "refs/heads/main",
+  "repository": {
+    "allow_forking": true,
+    "archive_url": "https://api.github.com/repos/tryggth/ngs-docker-action/{archive_format}{/ref}",
+    "archived": false,
+    "assignees_url": "https://api.github.com/repos/tryggth/ngs-docker-action/assignees{/user}",
+    "blobs_url": "https://api.github.com/repos/tryggth/ngs-docker-action/git/blobs{/sha}",
+    "branches_url": "https://api.github.com/repos/tryggth/ngs-docker-action/branches{/branch}",
+    "clone_url": "https://github.com/tryggth/ngs-docker-action.git",
+    "collaborators_url": "https://api.github.com/repos/tryggth/ngs-docker-action/collaborators{/collaborator}",
+    "comments_url": "https://api.github.com/repos/tryggth/ngs-docker-action/comments{/number}",
+    "commits_url": "https://api.github.com/repos/tryggth/ngs-docker-action/commits{/sha}",
+    "compare_url": "https://api.github.com/repos/tryggth/ngs-docker-action/compare/{base}...{head}",
+    "contents_url": "https://api.github.com/repos/tryggth/ngs-docker-action/contents/{+path}",
+    "contributors_url": "https://api.github.com/repos/tryggth/ngs-docker-action/contributors",
+    "created_at": 1633372921,
+    "default_branch": "main",
+    "deployments_url": "https://api.github.com/repos/tryggth/ngs-docker-action/deployments",
+    "description": "Action for publishing Action event data to Synadia Account channel",
+    "disabled": false,
+    "downloads_url": "https://api.github.com/repos/tryggth/ngs-docker-action/downloads",
+    "events_url": "https://api.github.com/repos/tryggth/ngs-docker-action/events",
+    "fork": false,
+    "forks": 0,
+    "forks_count": 0,
+    "forks_url": "https://api.github.com/repos/tryggth/ngs-docker-action/forks",
+    "full_name": "tryggth/ngs-docker-action",
+    "git_commits_url": "https://api.github.com/repos/tryggth/ngs-docker-action/git/commits{/sha}",
+    "git_refs_url": "https://api.github.com/repos/tryggth/ngs-docker-action/git/refs{/sha}",
+    "git_tags_url": "https://api.github.com/repos/tryggth/ngs-docker-action/git/tags{/sha}",
+    "git_url": "git://github.com/tryggth/ngs-docker-action.git",
+    "has_downloads": true,
+    "has_issues": true,
+    "has_pages": false,
+    "has_projects": true,
+    "has_wiki": true,
+    "homepage": null,
+    "hooks_url": "https://api.github.com/repos/tryggth/ngs-docker-action/hooks",
+    "html_url": "https://github.com/tryggth/ngs-docker-action",
+    "id": 413543681,
+    "issue_comment_url": "https://api.github.com/repos/tryggth/ngs-docker-action/issues/comments{/number}",
+    "issue_events_url": "https://api.github.com/repos/tryggth/ngs-docker-action/issues/events{/number}",
+    "issues_url": "https://api.github.com/repos/tryggth/ngs-docker-action/issues{/number}",
+    "keys_url": "https://api.github.com/repos/tryggth/ngs-docker-action/keys{/key_id}",
+    "labels_url": "https://api.github.com/repos/tryggth/ngs-docker-action/labels{/name}",
+    "language": "Shell",
+    "languages_url": "https://api.github.com/repos/tryggth/ngs-docker-action/languages",
+    "license": {
+      "key": "mit",
+      "name": "MIT License",
+      "node_id": "MDc6TGljZW5zZTEz",
+      "spdx_id": "MIT",
+      "url": "https://api.github.com/licenses/mit"
+    },
+    "master_branch": "main",
+    "merges_url": "https://api.github.com/repos/tryggth/ngs-docker-action/merges",
+    "milestones_url": "https://api.github.com/repos/tryggth/ngs-docker-action/milestones{/number}",
+    "mirror_url": null,
+    "name": "ngs-docker-action",
+    "node_id": "R_kgDOGKYtAQ",
+    "notifications_url": "https://api.github.com/repos/tryggth/ngs-docker-action/notifications{?since,all,participating}",
+    "open_issues": 0,
+    "open_issues_count": 0,
+    "owner": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/656385?v=4",
+      "email": "jimw@bugopolis.com",
+      "events_url": "https://api.github.com/users/tryggth/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tryggth/followers",
+      "following_url": "https://api.github.com/users/tryggth/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tryggth/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tryggth",
+      "id": 656385,
+      "login": "tryggth",
+      "name": "tryggth",
+      "node_id": "MDQ6VXNlcjY1NjM4NQ==",
+      "organizations_url": "https://api.github.com/users/tryggth/orgs",
+      "received_events_url": "https://api.github.com/users/tryggth/received_events",
+      "repos_url": "https://api.github.com/users/tryggth/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tryggth/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tryggth/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tryggth"
+    },
+    "private": false,
+    "pulls_url": "https://api.github.com/repos/tryggth/ngs-docker-action/pulls{/number}",
+    "pushed_at": 1633464780,
+    "releases_url": "https://api.github.com/repos/tryggth/ngs-docker-action/releases{/id}",
+    "size": 15,
+    "ssh_url": "git@github.com:tryggth/ngs-docker-action.git",
+    "stargazers": 0,
+    "stargazers_count": 0,
+    "stargazers_url": "https://api.github.com/repos/tryggth/ngs-docker-action/stargazers",
+    "statuses_url": "https://api.github.com/repos/tryggth/ngs-docker-action/statuses/{sha}",
+    "subscribers_url": "https://api.github.com/repos/tryggth/ngs-docker-action/subscribers",
+    "subscription_url": "https://api.github.com/repos/tryggth/ngs-docker-action/subscription",
+    "svn_url": "https://github.com/tryggth/ngs-docker-action",
+    "tags_url": "https://api.github.com/repos/tryggth/ngs-docker-action/tags",
+    "teams_url": "https://api.github.com/repos/tryggth/ngs-docker-action/teams",
+    "trees_url": "https://api.github.com/repos/tryggth/ngs-docker-action/git/trees{/sha}",
+    "updated_at": "2021-10-05T20:02:57Z",
+    "url": "https://github.com/tryggth/ngs-docker-action",
+    "visibility": "public",
+    "watchers": 0,
+    "watchers_count": 0
+  },
+  "sender": {
+    "avatar_url": "https://avatars.githubusercontent.com/u/19417021?v=4",
+    "events_url": "https://api.github.com/users/tryggth/events{/privacy}",
+    "followers_url": "https://api.github.com/users/tryggth/followers",
+    "following_url": "https://api.github.com/users/tryggth/following{/other_user}",
+    "gists_url": "https://api.github.com/users/tryggth/gists{/gist_id}",
+    "gravatar_id": "",
+    "html_url": "https://github.com/tryggth",
+    "id": 19417021,
+    "login": "tryggth",
+    "node_id": "MDQ6VXNlcjE5NDE3MDIx",
+    "organizations_url": "https://api.github.com/users/tryggth/orgs",
+    "received_events_url": "https://api.github.com/users/tryggth/received_events",
+    "repos_url": "https://api.github.com/users/tryggth/repos",
+    "site_admin": false,
+    "starred_url": "https://api.github.com/users/tryggth/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/tryggth/subscriptions",
+    "type": "User",
+    "url": "https://api.github.com/users/tryggth"
+  }
+}----------END EVENT INFO----------
+```
+The subscriber receiving the NATS message can use the `GITHUB_REPOSITORY` and `GITHUB_RUN_ID` to download the full log and extract the full event information as described [here](https://docs.github.com/en/rest/reference/actions#download-job-logs-for-a-workflow-run). [*NOTE*: _The API call returns a 302 with a `Location:`header for the actual URL. The actual URL will only be valid for 1 minute. However, the log itself will persist for the duration stated in `GITHUB_RETENTION_DAYS` original message field._]
+
+## Setup
+
 ## Credentials
-
-There are a few ways to authenticate this action. A service account will be needed with the following roles:
-
-- Cloud Run Admin (`roles/run.admin`):
-  - Can create, update, and delete services.
-  - Can get and set IAM policies.
 
 ## Example Workflows
 
-* [Deploy a prebuilt container](#deploy-a-prebuilt-container)
-
-* [Build and deploy a container](#build-and-deploy-a-container)
-
-### Setup
-
-1.  Create a new Google Cloud Project (or select an existing project).
-
-1. [Enable the Cloud Run API](https://console.cloud.google.com/flows/enableapi?apiid=run.googleapis.com).
-
-1.  [Create a Google Cloud service account][sa] or select an existing one.
-
-1.  Add the the following [Cloud IAM roles][roles] to your service account:
-
-    - `Cloud Run Admin` - allows for the creation of new Cloud Run services
-
-    - `Service Account User` -  required to deploy to Cloud Run as service account
-
-    - `Storage Admin` - allow push to Google Container Registry (this grants project level access, but recommend reducing this scope to [bucket level permissions](https://cloud.google.com/container-registry/docs/access-control#grant).)
-
-1.  [Download a JSON service account key][create-key] for the service account.
-
-1.  Add the following [secrets to your repository's secrets][gh-secret]:
-
-    - `GCP_PROJECT`: Google Cloud project ID
-
-    - `GCP_SA_KEY`: the downloaded service account key
-
-### Deploy a prebuilt container
-
-To run this [workflow](.github/workflows/example-workflow-quickstart.yaml), push to the branch named `example-deploy`:
-
-```sh
-git push YOUR-FORK main:example-deploy
-```
-
-### Build and deploy a container
-
-To run this [workflow](.github/workflows/example-workflow.yaml), push to the branch named `example-build-deploy`:
-
-```sh
-git push YOUR-FORK main:example-build-deploy
-```
-
-**Reminder: If this is your first deployment of a service, it will reject all unauthenticated requests. Learn more at [allowing unauthenticated requests](#Allow-unauthenticated-requests)**
-
+* add sample
 
 ## Contributing
 

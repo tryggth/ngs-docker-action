@@ -25,7 +25,9 @@ export ACTION_EVENT=$(jq -n --arg value $GITHUB_JOB '. + {GITHUB_JOB: $value}' |
 # Debugging information - message payload
 echo $ACTION_EVENT
 
-# Add any additional debugging information between the BEGIN and END markers
+# Add any additional debugging information between the BEGIN and END
+# sentinels. Remember, to retrieve the data the action log will need
+# to be parsed 
 echo "---------BEGIN EVENT INFO---------"
 cat $GITHUB_EVENT_PATH
 echo "----------END EVENT INFO----------"
