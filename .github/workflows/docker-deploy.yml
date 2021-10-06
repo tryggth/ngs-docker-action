@@ -18,9 +18,10 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.DOCKER_DEPLOY }}
       - id: get-tag
+        name: get-tag
         run: |
-          tag=$(echo "${{GITHUB_REF}}" | cut -d/ -f3)
-          echo "::set-output name=tag::$tag"
+          # tag=$(echo "${{GITHUB_REF}}" | cut -d/ -f3)
+          echo "::set-output name=tag::test"
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
         with:
