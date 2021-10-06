@@ -17,15 +17,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.DOCKER_DEPLOY }}
-      - name: Get the tag
-        run: echo "${{GITHUB_REF}}" | cut -d/ -f3
-      - id: get-tag
-        name: get-tag
-        run: echo "::set-output name=tag::test"
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
         with:
           push: true # Will only build if this is not here
           tags: |
-            ghcr.io/${{ github.repository }}:${{steps.get-tag.outputs.tag}}
             ghcr.io/${{ github.repository }}:latest
