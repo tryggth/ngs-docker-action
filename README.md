@@ -88,7 +88,7 @@ message.  Here is an example from the action in this action's repository:
 The content of the NATS payload tries to strike a balance of providing enough data
 from the action's triggering event to be useful for most (Continuous Integration) use cases while also providing the Github coordinates necessary to retrieve the action run's log.
 
-The action run's log contains additional triggering event - including the entire event's payload between the sentinel `---------BEGIN EVENT INFO---------` and `----------END EVENT INFO----------`. Here is an example of such a payload:
+The action run's log contains additional triggering event data. In the workflow run's log the entire Github even payload if printted in the log between the sentinels `---------BEGIN EVENT INFO---------` and `----------END EVENT INFO----------`. Here is an example of such a payload:
 
 ```
 ---------BEGIN EVENT INFO---------
