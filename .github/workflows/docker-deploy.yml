@@ -29,7 +29,7 @@ jobs:
           echo ${TEST_TAG1}
           export TEST_TAG2=$(echo ${TEST_TAG1} | cut -d '/' -f 3)
           echo ${TEST_TAG2}
-          echo "::set-output name=author::${{ github.ref }}"
+          echo "::set-output name=author::${TEST_TAG2}"
       - name: Print author name (sub)
         run: echo "${{ steps.sub.outputs.author }}"
       - name: Print author name with an environment variable
@@ -48,5 +48,5 @@ jobs:
         with:
           push: true # Will only build if this is not here
           tags: |
-            ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ github.repository }}:${{ steps.sub.outputs.author }}
             ghcr.io/${{ github.repository }}:latest
