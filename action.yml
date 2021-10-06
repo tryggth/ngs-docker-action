@@ -23,4 +23,4 @@ inputs:
     default: ''
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'docker://tryggth/ngs-docker-action:latest'
