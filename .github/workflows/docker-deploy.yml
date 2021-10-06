@@ -18,11 +18,15 @@ jobs:
           password: ${{ secrets.DOCKER_DEPLOY }}
       - run: echo "$GITHUB_REF"
       - run: echo "$GITHUB_REF" | cut -d '/' -f 3
-      - id: tag
+      - name: set output
+        id: tag
         run: echo "::set-ouput name=tag::latest"
+      - name: test output
+        run: echo "${{ steps.tag.outputs.tag }}"
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
         with:
           push: true # Will only build if this is not here
           tags: |
             ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ github.repository }}:latest
