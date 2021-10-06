@@ -272,6 +272,61 @@ The subscriber receiving the NATS message can use the `GITHUB_REPOSITORY` and `G
 
 ## Setup
 
+### Setup NGS account
+
+### Deploy message receiver
+
+### Add the following `YAML` file to your to the `.github/workflows` directory in your repository
+
+```yaml
+on:
+  push:
+  pull_request:
+  page_build:
+  release:
+  repository_dispatch:
+  workflow_call:
+  workflow_dispatch:
+  check_run:
+  check_suite:
+  create:
+  delete:
+  deployment:
+  deployment_status:
+  discussion:
+  discussion_comment:
+  fork:
+  gollum:
+  issue_comment:
+  issues:
+  label:
+  milestone:
+  project:
+  project_card:
+  project_column:
+  public:
+  pull_request_review:
+  pull_request_review_comment:
+  pull_request_target:
+  registry_package:
+  status:
+  watch:
+  # workflow_run: - Normally this would specify a trigger workflow.
+  # Without a workflow name scoping the run it would infinitiely loop
+
+jobs:
+  send_actions_event:
+    runs-on: ubuntu-latest
+    name: Marshal Event
+    steps:
+      - name: Send event
+        uses: tryggth/ngs-docker-action@v0.24
+        with:
+          subject: GA
+          user: ${{ secrets.NGS_USER }}
+          seed: ${{ secrets.NGS_USER_SEED }}
+```
+
 ## Credentials
 
 ## Example Workflows
