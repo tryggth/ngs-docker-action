@@ -25,6 +25,10 @@ jobs:
         id: sub
         run: |
           echo "${{ github.ref }}"
+          export TEST_TAG1=$(echo "${{ github.ref }}")
+          echo ${TEST_TAG1}
+          export TEST_TAG2=$(echo ${TEST_TAG1} | cut -d '/' -f 3)
+          echo ${TEST_TAG2}
           echo "::set-output name=author::${{ github.ref }}"
       - name: Print author name (sub)
         run: echo "${{ steps.sub.outputs.author }}"
