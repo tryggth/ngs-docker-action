@@ -19,7 +19,7 @@ jobs:
           password: ${{ secrets.DOCKER_DEPLOY }}
       - id: get-tag
         run: |
-          tag=$(echo ${{github.event.client_payload.value}} | cut -d/ -f3)
+          tag=$(echo ${{GITHUB_REF}} | cut -d/ -f3)
           echo "::set-output name=tag::$tag"
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
