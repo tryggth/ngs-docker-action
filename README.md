@@ -9,7 +9,7 @@ limitations under the License.
 -->
 # `ngs-docker-action` GitHub Action
 
-Publishes Github Action event data to [Synadia][NGS]. Subscribers can use
+Publishes Github Action event data to [Synadia NGS](https://synadia.com/ngs). Subscribers can use
 the data for CI systems or general event processing.
 
 ## Table of Contents
