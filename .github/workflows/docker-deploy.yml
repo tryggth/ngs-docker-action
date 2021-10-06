@@ -24,9 +24,8 @@ jobs:
       - name: Get author name (sub)
         id: sub
         run: |
-          RELEASE_TAG=$(cat "${{ github.ref }}" | cut -d '/' -f 3)
-          echo "RELEASE_TAG=${{ RELEASE_TAG }}"
-          echo "::set-output name=author::${{ RELEASE_TAG }}"
+          echo "${{ github.ref }}"
+          echo "::set-output name=author::${{ github.ref }}"
       - name: Print author name (sub)
         run: echo "${{ steps.sub.outputs.author }}"
       - name: Print author name with an environment variable
