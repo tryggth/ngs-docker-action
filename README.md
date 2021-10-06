@@ -39,7 +39,7 @@ creating a user and getting the credentials.
 ```yaml
 steps:
   - name: Send event
-    uses: tryggth/ngs-docker-action@v0.3
+    uses: tryggth/ngs-docker-action@v0.24
     with:
       subject: GA
       user: ${{ secrets.NGS_USER }}
