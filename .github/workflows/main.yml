@@ -39,7 +39,7 @@ jobs:
     name: Marshal Event
     steps:
       - name: Send event
-        uses: tryggth/ngs-docker-action@v0.12
+        uses: tryggth/ngs-docker-action@v0.13
         with:
           subject: GA
           user: ${{ secrets.NGS_USER }}
